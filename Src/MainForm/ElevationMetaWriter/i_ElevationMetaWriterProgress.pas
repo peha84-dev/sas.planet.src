@@ -19,52 +19,34 @@
 {* https://github.com/sasgis/sas.planet.src                                   *}
 {******************************************************************************}
 
-unit i_MapViewGoto;
+unit i_ElevationMetaWriterProgress;
 
 interface
 
-uses
-  t_GeoTypes,
-  i_Projection,
-  i_Notifier;
-
 type
-  IGotoPosStatic = interface
-    ['{D9988166-EFD3-4C84-B43C-B0FE95194FB1}']
-    function GetLonLat: TDoublePoint;
-    property LonLat: TDoublePoint read GetLonLat;
+  TElevationMetaWriterProgressStatus = (
+    emwIdle,
+    emwBusy,
+    emwDone,
+    emwCanceled
+  );
 
-    function GetProjection: IProjection;
-    property Projection: IProjection read GetProjection;
-
-    function GetGotoTime: TDateTime;
-    property GotoTime: TDateTime read GetGotoTime;
+  TElevationMetaWriterProgressInfo = record
+    TotalCount: Integer;
+    ReadyCount: Integer;
   end;
 
-  IMapViewGoto = interface
-    ['{33FDD537-B089-4ED6-8AB4-720E47B3C8B8}']
-    procedure GotoLonLat(
-      const ALonLat: TDoublePoint;
-      const AShowMarker: Boolean
-    );
-    procedure GotoPos(
-      const ALonLat: TDoublePoint;
-      const AProjection: IProjection;
-      const AShowMarker: Boolean
-    );
-    procedure FitRectToScreen(
-      const ALonLatRect: TDoubleRect
-    );
-    procedure ShowMarker(
-      const ALonLat: TDoublePoint
-    );
-    procedure HideMarker;
+  IElevationMetaWriterProgress = interface
+    ['{603F97E1-7932-4F8F-9D23-27278F5AB67B}']
+    procedure Reset;
 
-    function GetLastGotoPos: IGotoPosStatic;
-    property LastGotoPos: IGotoPosStatic read GetLastGotoPos;
+    function GetInfo: TElevationMetaWriterProgressInfo;
+    procedure SetInfo(const AValue: TElevationMetaWriterProgressInfo);
+    property Info: TElevationMetaWriterProgressInfo read GetInfo write SetInfo;
 
-    function GetChangeNotifier: INotifier;
-    property ChangeNotifier: INotifier read GetChangeNotifier;
+    function GetStatus: TElevationMetaWriterProgressStatus;
+    procedure SetStatus(const AValue: TElevationMetaWriterProgressStatus);
+    property Status: TElevationMetaWriterProgressStatus read GetStatus write SetStatus;
   end;
 
 implementation

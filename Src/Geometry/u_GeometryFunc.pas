@@ -151,6 +151,10 @@ function GeometryLonLatPolygonToPlainText(
   const AMultiGeometrySeparator: string
 ): string;
 
+function GeometryLonLatLineToArray(
+  const AGeometry: IGeometryLonLatLine
+): TArrayOfGeometryLonLatSingleLine;
+
 implementation
 
 uses
@@ -920,17 +924,23 @@ var
   VIterator: ITileIterator;
   VFoundNextPart: Boolean;
 begin
+  SetLength(AStartPoints, 0);
+  SetLength(ATilesCount, 0);
+
+  if (ASplitCount <= 0) or (ATilesCountInPolygon <= 0) then begin
+    Assert(False);
+    Exit;
+  end;
+
   VSplitCount := ASplitCount;
   repeat
     VPartTilesCount := ATilesCountInPolygon div VSplitCount;
     if VPartTilesCount = 0 then begin
       Dec(VSplitCount);
     end;
-  until VPartTilesCount > 0;
+  until (VPartTilesCount > 0) or (VSplitCount <= 0);
 
   if VSplitCount <= 0 then begin
-    SetLength(AStartPoints, 0);
-    SetLength(ATilesCount, 0);
     Exit;
   end;
 
@@ -1097,6 +1107,32 @@ begin
     end;
   end else if Supports(AGeometry, IGeometryLonLatSinglePolygon, VSingleLine) then begin
     Result := GeometryLonLatSinglePolygonToPlainText(VSingleLine, ACoordToStringConverter, APointSeparator, AContourSeparator);
+  end;
+end;
+
+function GeometryLonLatLineToArray(
+  const AGeometry: IGeometryLonLatLine
+): TArrayOfGeometryLonLatSingleLine;
+var
+  I: Integer;
+  VLine: IGeometryLonLatSingleLine;
+  VMultiLine: IGeometryLonLatMultiLine;
+begin
+  if AGeometry = nil then begin
+    Result := nil;
+    Exit;
+  end else
+  if Supports(AGeometry, IGeometryLonLatSingleLine, VLine) then begin
+    SetLength(Result, 1);
+    Result[0] := VLine;
+  end else
+  if Supports(AGeometry, IGeometryLonLatMultiLine, VMultiLine) then begin
+    SetLength(Result, VMultiLine.Count);
+    for I := 0 to VMultiLine.Count - 1 do begin
+      Result[I] := VMultiLine.Item[I];
+    end;
+  end else begin
+    raise Exception.Create('Unexpected IGeometryLonLatLine type!');
   end;
 end;
 

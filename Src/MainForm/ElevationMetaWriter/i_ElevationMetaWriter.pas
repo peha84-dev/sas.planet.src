@@ -19,52 +19,23 @@
 {* https://github.com/sasgis/sas.planet.src                                   *}
 {******************************************************************************}
 
-unit i_MapViewGoto;
+unit i_ElevationMetaWriter;
 
 interface
 
 uses
-  t_GeoTypes,
-  i_Projection,
-  i_Notifier;
+  i_VectorDataItemSimple;
 
 type
-  IGotoPosStatic = interface
-    ['{D9988166-EFD3-4C84-B43C-B0FE95194FB1}']
-    function GetLonLat: TDoublePoint;
-    property LonLat: TDoublePoint read GetLonLat;
+  TElevationMetaWriterResult = procedure(const AItem: IVectorDataItem) of object;
 
-    function GetProjection: IProjection;
-    property Projection: IProjection read GetProjection;
+  IElevationMetaWriter = interface
+    ['{62C42A6C-9ABC-40A5-945B-DB2FF5E6339C}']
 
-    function GetGotoTime: TDateTime;
-    property GotoTime: TDateTime read GetGotoTime;
-  end;
-
-  IMapViewGoto = interface
-    ['{33FDD537-B089-4ED6-8AB4-720E47B3C8B8}']
-    procedure GotoLonLat(
-      const ALonLat: TDoublePoint;
-      const AShowMarker: Boolean
+    procedure ProcessItemAsync(
+      const AItem: IVectorDataItem;
+      const AOnResult: TElevationMetaWriterResult
     );
-    procedure GotoPos(
-      const ALonLat: TDoublePoint;
-      const AProjection: IProjection;
-      const AShowMarker: Boolean
-    );
-    procedure FitRectToScreen(
-      const ALonLatRect: TDoubleRect
-    );
-    procedure ShowMarker(
-      const ALonLat: TDoublePoint
-    );
-    procedure HideMarker;
-
-    function GetLastGotoPos: IGotoPosStatic;
-    property LastGotoPos: IGotoPosStatic read GetLastGotoPos;
-
-    function GetChangeNotifier: INotifier;
-    property ChangeNotifier: INotifier read GetChangeNotifier;
   end;
 
 implementation

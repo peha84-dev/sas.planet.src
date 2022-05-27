@@ -79,6 +79,8 @@ uses
   i_ViewPortState,
   i_StickToGrid,
   i_SensorList,
+  i_ElevationMetaWriter,
+  i_ElevationProfilePresenter,
   i_SearchResultPresenter,
   i_MergePolygonsResult,
   i_MergePolygonsPresenter,
@@ -611,6 +613,9 @@ type
     actMarkSaveAsNew: TAction;
     actMarkSaveAsSeparateSegments: TAction;
     actEditPathRouteCalcUndo: TAction;
+    tbElevationProfile: TTBXDockablePanel;
+    tbxElevationProfileShow: TTBXVisibilityToggleItem;
+    tbxitmElevationProfile: TTBXItem;
 
     procedure FormActivate(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -764,6 +769,7 @@ type
     procedure tbpmiShowOtherVersionsClick(Sender: TObject);
     procedure tbMergePolygonsClose(Sender: TObject);
     procedure tbxtmAddToMergePolygonsClick(Sender: TObject);
+    procedure tbxitmElevationProfileClick(Sender: TObject);
     procedure tbxFillingMapClick(Sender: TObject);
     procedure actSelectByRectExecute(Sender: TObject);
     procedure actSelectByPolygonExecute(Sender: TObject);
@@ -913,6 +919,10 @@ type
 
     FMergePolygonsPresenter: IMergePolygonsPresenter;
     FMergePolygonsResult: IMergePolygonsResult;
+
+    FElevationMetaWriter: IElevationMetaWriter;
+    FElevationProfilePresenter: IElevationProfilePresenter;
+
     FMapMoving: Boolean;
     FMapMovingButton: TMouseButton;
     FMapZoomAnimtion: Boolean;
@@ -977,6 +987,7 @@ type
     FMapTypeEditor: IMapTypeConfigModalEdit;
 
     FMapGoto: IMapViewGoto;
+    FGpsTrackGoTo: IMapViewGoto;
 
     FArgProcessor: ICmdLineArgProcessor;
     FFillingMapPolygon: IFillingMapPolygon;
@@ -997,6 +1008,7 @@ type
 
     procedure InitSearchers;
     procedure InitMergepolygons;
+    procedure InitElevationProfile;
     procedure InitLayers;
     procedure InitGridsMenus;
     procedure InitMouseCursors;
@@ -1122,6 +1134,7 @@ type
     procedure DestroyWnd; override;
   public
     procedure RefreshTranslation; override;
+    function IsShortCut(var AMsg: TWMKey): Boolean; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1230,6 +1243,8 @@ uses
   u_SearchResultPresenterOnPanel,
   u_MergePolygonsResult,
   u_MergePolygonsPresenterOnPanel,
+  u_ElevationMetaWriter,
+  u_ElevationProfilePresenterOnPanel,
   u_ListenerNotifierLinksList,
   u_TileDownloaderUIOneTile,
   u_ListenerByEvent,
@@ -1296,7 +1311,6 @@ begin
   FFillingMapPolygon := TFillingMapPolygon.Create;
   FMergePolygonsResult := TMergePolygonsResult.Create;
 
-
   FConfig := TMainFormConfig.Create(GState.BaseConfigPath, GState.MapType.DefaultMainMapGUID);
   FConfig.ReadConfig(GState.MainConfigProvider);
 
@@ -1343,6 +1357,8 @@ begin
   LoadMapIconsList;
 
   FMapGoto := TMapViewGoto.Create(FActiveProjectionSet, FViewPortState);
+  FGpsTrackGoTo := TMapViewGoto.Create(FActiveProjectionSet, FViewPortState);
+
   FMarkDBGUI :=
     TMarkDbGUIHelper.Create(
       Self,
@@ -2074,6 +2090,7 @@ begin
 
     InitSearchers;
     InitMergePolygons;
+    InitElevationProfile;
     CreateLangMenu;
 
     FfrmGoTo :=
@@ -2124,6 +2141,7 @@ begin
         GState.MarkSystemConfig,
         GState.Config.ExportMarks2KmlConfig,
         FMapGoto,
+        FElevationProfilePresenter,
         FFormRegionProcess
       );
     FfrmMarksExplorer.PopupParent := Self;
@@ -2277,6 +2295,7 @@ begin
       FLineOnMapByOperation[ao_select_line] as IPathOnMapEdit,
       FSelectionRect,
       FMapGoto,
+      FGpsTrackGoTo,
       FConfig.NavToPoint,
       FPointOnMapEdit,
       FTileErrorLogProvider,
@@ -2420,6 +2439,30 @@ begin
       FMarkDBGUI
     );
   mmoMergePolyHint.Text := _('Press Ctrl and click on polygon to add one...');
+end;
+
+procedure TfrmMain.InitElevationProfile;
+begin
+  FElevationMetaWriter :=
+    TElevationMetaWriter.Create(
+      GState.Config.LanguageManager,
+      GState.AppClosingNotifier,
+      GState.Config.TerrainConfig,
+      GState.TerrainProviderList,
+      GState.VectorDataFactory,
+      GState.VectorGeometryLonLatFactory
+    );
+
+  FElevationProfilePresenter :=
+    TElevationProfilePresenterOnPanel.Create(
+      tbElevationProfile,
+      tbxElevationProfileShow,
+      GState.Config.ElevationProfileConfig,
+      GState.Config.LanguageManager,
+      GState.GPSDatum,
+      FGpsTrackGoTo,
+      FElevationMetaWriter
+    );
 end;
 
 procedure TfrmMain.CreateProjectionActions;
@@ -5736,6 +5779,26 @@ begin
   end;
 end;
 
+procedure TfrmMain.tbxitmElevationProfileClick(Sender: TObject);
+var
+  I: Integer;
+  VMouseDownPos: TPoint;
+  VVectorItems: IVectorItemSubset;
+  VLocalConverter: ILocalCoordConverter;
+begin
+  VLocalConverter := FViewPortState.View.GetStatic;
+  VMouseDownPos := FMouseState.GetLastDownPos(mbRight);
+  VVectorItems := FindItems(VLocalConverter, VMouseDownPos);
+  if VVectorItems <> nil then begin
+    for I := 0 to VVectorItems.Count - 1 do begin
+      if Supports(VVectorItems.Items[I].Geometry, IGeometryLonLatLine) then begin
+        FElevationProfilePresenter.ShowProfile(VVectorItems.Items[I]);
+        Break;
+      end;
+    end;
+  end;
+end;
+
 procedure TfrmMain.NSensorsClick(Sender: TObject);
 begin
   TBXSensorsBar.Visible := TTBXItem(Sender).Checked;
@@ -5986,6 +6049,9 @@ begin
   tbxtmAddToMergePolygons.Visible :=
     (Assigned(VMark) and Supports(VMark.Geometry, IGeometryLonLatPolygon)) or
     (FSelectedWiki <> nil);
+
+  tbxitmElevationProfile.Visible :=
+    Assigned(VMark) and Supports(VMark.Geometry, IGeometryLonLatLine);
 
   tbxFillingMap.Visible :=
     (Assigned(VMark) and Supports(VMark.Geometry, IGeometryLonLatPolygon)) or
@@ -7569,6 +7635,16 @@ begin
     VLocalConverter.Projection.Zoom - 1,
     VFreezePos
   );
+end;
+
+function TfrmMain.IsShortCut(var AMsg: TWMKey): Boolean;
+begin
+  // Work around to avoid main form stealing shortcuts from active, non-modal forms
+  if (Screen.ActiveForm <> nil) and (Screen.ActiveForm <> Self) then begin
+    Result := Screen.ActiveForm.IsShortCut(AMsg);
+  end else begin
+    Result := inherited IsShortCut(AMsg);
+  end;
 end;
 
 end.

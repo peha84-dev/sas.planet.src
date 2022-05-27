@@ -19,37 +19,34 @@
 {* https://github.com/sasgis/sas.planet.src                                   *}
 {******************************************************************************}
 
-unit u_MapLayerGotoMarker;
+unit u_MapLayerGpsTrackGoToMarker;
 
 interface
 
 uses
+  Math,
   GR32,
   GR32_Image,
+  GR32_Layers,
   t_GeoTypes,
   i_Notifier,
-  i_NotifierTime,
   i_NotifierOperation,
   i_LocalCoordConverterChangeable,
   i_InternalPerformanceCounter,
   i_MarkerDrawable,
   i_MapViewGoto,
   i_LocalCoordConverter,
-  i_GotoLayerConfig,
   u_WindowLayerBasicBase;
 
 type
-  TMapLayerGotoMarker = class(TWindowLayerBasicBase)
+  TMapLayerGpsTrackGoToMarker = class(TWindowLayerBasicBase)
   private
-    FLocalConverter: ILocalCoordConverterChangeable;
-    FConfig: IGotoLayerConfig;
-    FMapGoto: IMapViewGoto;
+    FMapViewGoTo: IMapViewGoTo;
     FMarkerChangeable: IMarkerDrawableChangeable;
+    FLocalConverter: ILocalCoordConverterChangeable;
 
-    procedure OnTimer;
-    procedure OnConfigChange;
+    procedure OnGoToChange;
     procedure OnPosChange;
-    function GetIsVisible: Boolean;
   protected
     procedure PaintLayer(ABuffer: TBitmap32); override;
     procedure StartThreads; override;
@@ -58,42 +55,31 @@ type
       const APerfList: IInternalPerformanceCounterList;
       const AAppStartedNotifier: INotifierOneOperation;
       const AAppClosingNotifier: INotifierOneOperation;
-      AParentMap: TImage32;
-      const ATimerNoifier: INotifierTime;
+      const AParentMap: TImage32;
       const ALocalConverter: ILocalCoordConverterChangeable;
       const AMarkerChangeable: IMarkerDrawableChangeable;
-      const AMapGoto: IMapViewGoto;
-      const AConfig: IGotoLayerConfig
+      const AMapViewGoTo: IMapViewGoTo
     );
   end;
 
 implementation
 
 uses
-  Math,
-  SysUtils,
-  GR32_Layers,
-  i_Listener,
   i_ProjectionType,
-  u_ListenerTime,
   u_ListenerByEvent,
   u_GeoFunc;
 
-{ TMapLayerGotoMarker }
+{ TMapLayerGpsTrackGoToMarker }
 
-constructor TMapLayerGotoMarker.Create(
+constructor TMapLayerGpsTrackGoToMarker.Create(
   const APerfList: IInternalPerformanceCounterList;
   const AAppStartedNotifier: INotifierOneOperation;
   const AAppClosingNotifier: INotifierOneOperation;
-  AParentMap: TImage32;
-  const ATimerNoifier: INotifierTime;
+  const AParentMap: TImage32;
   const ALocalConverter: ILocalCoordConverterChangeable;
   const AMarkerChangeable: IMarkerDrawableChangeable;
-  const AMapGoto: IMapViewGoto;
-  const AConfig: IGotoLayerConfig
+  const AMapViewGoTo: IMapViewGoTo
 );
-var
-  VListener: IListener;
 begin
   inherited Create(
     APerfList,
@@ -101,78 +87,37 @@ begin
     AAppClosingNotifier,
     TCustomLayer.Create(AParentMap.Layers)
   );
+
   FLocalConverter := ALocalConverter;
-  FConfig := AConfig;
   FMarkerChangeable := AMarkerChangeable;
-  FMapGoto := AMapGoto;
-
-  VListener := TNotifyNoMmgEventListener.Create(Self.OnConfigChange);
-  LinksList.Add(
-    VListener,
-    FConfig.GetChangeNotifier
-  );
+  FMapViewGoTo := AMapViewGoTo;
 
   LinksList.Add(
-    VListener,
-    FMarkerChangeable.ChangeNotifier
+    TNotifyNoMmgEventListener.Create(Self.OnGoToChange),
+    FMapViewGoTo.GetChangeNotifier
   );
 
-  LinksList.Add(
-    VListener,
-    FMapGoto.GetChangeNotifier
-  );
-
-  LinksList.Add(
-    TListenerTimeCheck.Create(Self.OnTimer, 1000),
-    ATimerNoifier
-  );
   LinksList.Add(
     TNotifyNoMmgEventListener.Create(Self.OnPosChange),
     FLocalConverter.ChangeNotifier
   );
 end;
 
-function TMapLayerGotoMarker.GetIsVisible: Boolean;
-var
-  VCurrTime: TDateTime;
-  VGotoTime: TDateTime;
-  VTimeDelta: Double;
-  VGotoPos: IGotoPosStatic;
-  VGotoLonLat: TDoublePoint;
-  VShowTimeDelta: TDateTime;
-begin
-  VGotoPos := FMapGoto.LastGotoPos;
-  Result := False;
-  if VGotoPos <> nil then begin
-    VGotoTime := VGotoPos.GotoTime;
-    if not IsNan(VGotoTime) then begin
-      VGotoLonLat := VGotoPos.LonLat;
-      if not PointIsEmpty(VGotoLonLat) then begin
-        VCurrTime := Now;
-        if (VGotoTime <= VCurrTime) then begin
-          VShowTimeDelta := (FConfig.ShowTickCount / 1000) / 60 / 60 / 24;
-          VTimeDelta := VCurrTime - VGotoTime;
-          if (VTimeDelta < VShowTimeDelta) then begin
-            Result := True;
-          end;
-        end;
-      end;
-    end;
-  end;
-end;
-
-procedure TMapLayerGotoMarker.OnConfigChange;
+procedure TMapLayerGpsTrackGoToMarker.OnGoToChange;
 begin
   ViewUpdateLock;
   try
-    Visible := GetIsVisible;
+    Visible :=
+      (FMapViewGoTo.LastGotoPos <> nil) and
+      not PointIsEmpty(FMapViewGoTo.LastGotoPos.LonLat);
+
     SetNeedFullRepaintLayer;
   finally
     ViewUpdateUnlock;
   end;
 end;
 
-procedure TMapLayerGotoMarker.OnPosChange;
+procedure TMapLayerGpsTrackGoToMarker.OnPosChange;
 begin
   ViewUpdateLock;
   try
@@ -182,19 +127,7 @@ begin
   end;
 end;
 
-procedure TMapLayerGotoMarker.OnTimer;
-begin
-  if Visible then begin
-    ViewUpdateLock;
-    try
-      Visible := GetIsVisible;
-    finally
-      ViewUpdateLock;
-    end;
-  end;
-end;
-
-procedure TMapLayerGotoMarker.PaintLayer(
+procedure TMapLayerGpsTrackGoToMarker.PaintLayer(
   ABuffer: TBitmap32
 );
 var
@@ -207,7 +140,7 @@ var
 begin
   inherited;
 
-  VGotoPos := FMapGoto.LastGotoPos;
+  VGotoPos := FMapViewGoTo.LastGotoPos;
 
   if VGotoPos = nil then begin
     Exit;
@@ -218,16 +151,17 @@ begin
     VLocalConverter := FLocalConverter.GetStatic;
     VProjectionType := VLocalConverter.Projection.ProjectionType;
     VProjectionType.ValidateLonLatPos(VGotoLonLat);
-    VMarker := FMarkerChangeable.GetStatic;
     VFixedOnView := VLocalConverter.LonLat2LocalPixelFloat(VGotoLonLat);
+
+    VMarker := FMarkerChangeable.GetStatic;
     VMarker.DrawToBitmap(ABuffer, VFixedOnView);
   end;
 end;
 
-procedure TMapLayerGotoMarker.StartThreads;
+procedure TMapLayerGpsTrackGoToMarker.StartThreads;
 begin
   inherited;
-  OnConfigChange;
+  OnGoToChange;
 end;
 
 end.

@@ -19,52 +19,18 @@
 {* https://github.com/sasgis/sas.planet.src                                   *}
 {******************************************************************************}
 
-unit i_MapViewGoto;
+unit i_ElevationProfilePresenter;
 
 interface
 
 uses
-  t_GeoTypes,
-  i_Projection,
-  i_Notifier;
+  i_VectorDataItemSimple;
 
 type
-  IGotoPosStatic = interface
-    ['{D9988166-EFD3-4C84-B43C-B0FE95194FB1}']
-    function GetLonLat: TDoublePoint;
-    property LonLat: TDoublePoint read GetLonLat;
+  IElevationProfilePresenter = interface
+    ['{5FD21B61-D27A-446C-A136-8DB16DC07E90}']
 
-    function GetProjection: IProjection;
-    property Projection: IProjection read GetProjection;
-
-    function GetGotoTime: TDateTime;
-    property GotoTime: TDateTime read GetGotoTime;
-  end;
-
-  IMapViewGoto = interface
-    ['{33FDD537-B089-4ED6-8AB4-720E47B3C8B8}']
-    procedure GotoLonLat(
-      const ALonLat: TDoublePoint;
-      const AShowMarker: Boolean
-    );
-    procedure GotoPos(
-      const ALonLat: TDoublePoint;
-      const AProjection: IProjection;
-      const AShowMarker: Boolean
-    );
-    procedure FitRectToScreen(
-      const ALonLatRect: TDoubleRect
-    );
-    procedure ShowMarker(
-      const ALonLat: TDoublePoint
-    );
-    procedure HideMarker;
-
-    function GetLastGotoPos: IGotoPosStatic;
-    property LastGotoPos: IGotoPosStatic read GetLastGotoPos;
-
-    function GetChangeNotifier: INotifier;
-    property ChangeNotifier: INotifier read GetChangeNotifier;
+    procedure ShowProfile(const AItem: IVectorDataItem);
   end;
 
 implementation

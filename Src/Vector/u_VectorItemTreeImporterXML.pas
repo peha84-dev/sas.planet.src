@@ -38,6 +38,7 @@ uses
   i_ImportConfig,
   i_MarkPicture,
   i_AppearanceOfMarkFactory,
+  u_VectorItemTreeImporterXmlHelpers,
   u_BaseInterfacedObject,
   vsagps_public_sysutils,
   vsagps_public_print,
@@ -54,15 +55,6 @@ type
   end;
 
 type
-  TPointWhen = class
-  private
-    FFront: Integer;
-    FWhen: array of TDateTime;
-  public
-    procedure PushBack(const AValue: TDateTime);
-    function PopFront(out Avalue: TDateTime): Boolean;
-  end;
-
   TVectorItemTreeImporterXML = class(TBaseInterfacedObject, IVectorItemTreeImporter, IVectorItemTreeImporterXMLInternal)
   private
     FSkipFolders: Boolean;
@@ -73,7 +65,10 @@ type
     FVectorDataFactory: IVectorDataFactory;
     FVectorItemSubsetBuilderFactory: IVectorItemSubsetBuilderFactory;
     FFormat: TFormatSettings;
-    FKmlGxWhen: TPointWhen;
+
+    FKmlGxWhen: TKmlPointWhen;
+    FKmlStyleList: TKmlStyleList;
+    FKmlStyleMap: TKmlStyleMap;
   private
     procedure Internal_ParseXML_UserProc(
       const AXmlVectorObjects: IXmlVectorObjects;
@@ -114,6 +109,7 @@ type
       const pPX_Result: Pvsagps_XML_ParserResult
     );
   private
+    { IVectorItemTreeImporter }
     function ProcessImport(
       AOperationID: Integer;
       const ACancelNotifier: INotifierOperation;
@@ -121,6 +117,7 @@ type
       const AConfig: IInterface
     ): IVectorItemTree;
   private
+    { IVectorItemTreeImporterXMLInternal }
     function LoadFromStream(
       const AContext: TVectorLoadContext;
       const AStream: TStream
@@ -135,6 +132,7 @@ type
       const AVectorDataFactory: IVectorDataFactory;
       const AVectorItemSubsetBuilderFactory: IVectorItemSubsetBuilderFactory
     );
+    destructor Destroy; override;
   end;
 
 implementation
@@ -200,6 +198,7 @@ constructor TVectorItemTreeImporterXML.Create(
 );
 begin
   inherited Create;
+
   FSkipFolders := ASkipFolders;
   FMarkPictureList := AMarkPictureList;
   FAppearanceOfMarkFactory := AAppearanceOfMarkFactory;
@@ -209,6 +208,17 @@ begin
   FVectorItemSubsetBuilderFactory := AVectorItemSubsetBuilderFactory;
 
   VSAGPS_PrepareFormatSettings(FFormat);
+
+  FKmlStyleList := TKmlStyleList.Create;
+  FKmlStyleMap := TKmlStyleMap.Create;
+end;
+
+destructor TVectorItemTreeImporterXML.Destroy;
+begin
+  FreeAndNil(FKmlStyleList);
+  FreeAndNil(FKmlStyleMap);
+
+  inherited Destroy;
 end;
 
 procedure TVectorItemTreeImporterXML.Internal_CloseLinearRing(
@@ -273,8 +283,33 @@ procedure TVectorItemTreeImporterXML.Internal_CloseMark(
   const AXmlVectorObjects: IXmlVectorObjects;
   const pPX_Result: Pvsagps_XML_ParserResult
 );
+
+  function _TryGetKmlStyle(out AKmlStyle: TKmlStyleItem): Boolean;
+  var
+    VStyleUrl, VStyleId: string;
+  begin
+    Result := False;
+    if kml_styleUrl in pPX_Result^.kml_data.fAvail_strs then begin
+      VStyleUrl := SafeSetStringP(pPX_Result^.kml_data.fParamsStrs[kml_styleUrl]);
+      if TryStyleUrlToStyleId(VStyleUrl, VStyleId) then begin
+        if FKmlStyleMap.TryGetStyleUrl(VStyleId, VStyleUrl) then begin
+          if TryStyleUrlToStyleId(VStyleUrl, VStyleId) then begin
+            Result := FKmlStyleList.TryGetStyle(VStyleId, AKmlStyle);
+          end;
+        end else begin
+          Result := FKmlStyleList.TryGetStyle(VStyleId, AKmlStyle);
+        end;
+      end;
+    end;
+  end;
+
+var
+  VKmlStyle: TKmlStyleItem;
 begin
-  // do it
+  if _TryGetKmlStyle(VKmlStyle) then begin
+    // update Style in kml_data
+    VKmlStyle.WriteToKmlData(@pPX_Result^.kml_data);
+  end;
   AXmlVectorObjects.CloseMarkObject(
     @(pPX_Result^.kml_data),
     cmom_KML
@@ -399,6 +434,9 @@ begin
     Inc(VParserOptions.gpx_options.bParse_gpxx_extensions);
     Inc(VParserOptions.gpx_options.bParse_gpxx_appearance);
   end;
+
+  FKmlStyleList.Clear;
+  FKmlStyleMap.Clear;
 
   // parse
   VSAGPS_LoadAndParseXML(
@@ -535,7 +573,7 @@ begin
           xtd_ReadAttributes: begin
             with pPX_Result^.kml_data do begin
               if (FKmlGxWhen <> nil) and (kml_when in fAvail_params) then begin
-                FKmlGxWhen.PushBack(fValues.when);
+                FKmlGxWhen.Enqueue(fValues.when);
               end;
             end;
           end;
@@ -555,7 +593,10 @@ begin
                   VWptMeta.Elevation := fValues.altitude;
                 end;
                 Assert(FKmlGxWhen <> nil);
-                VWptMeta.IsTimeStampOk := FKmlGxWhen.PopFront(VWptMeta.TimeStamp);
+                if FKmlGxWhen.Count > 0 then begin
+                  VWptMeta.TimeStamp := FKmlGxWhen.Dequeue;
+                  VWptMeta.IsTimeStampOk := VWptMeta.TimeStamp <> 0;
+                end;
                 AXmlVectorObjects.AddTrackPoint(VWptPoint, @VWptMeta);
               end;
             end;
@@ -567,7 +608,7 @@ begin
         case pPX_State^.tag_disposition of
           xtd_Open: begin
             AXmlVectorObjects.OpenMultiTrack;
-            FKmlGxWhen := TPointWhen.Create;
+            FKmlGxWhen := TKmlPointWhen.Create;
           end;
           xtd_Close: begin
             AXmlVectorObjects.CloseMultiTrack;
@@ -581,7 +622,7 @@ begin
           xtd_Open: begin
             // open new track segment or open single track
             AXmlVectorObjects.OpenTrackSegment;
-            FKmlGxWhen := TPointWhen.Create;
+            FKmlGxWhen := TKmlPointWhen.Create;
           end;
           xtd_Close: begin
             // close track segment or close single track
@@ -669,8 +710,14 @@ begin
         // параметры рисования
         case pPX_State^.tag_disposition of
           xtd_Close: begin
-            // пропихнуть наверх все параметры *Style
+            if (kml_a_s_id in pPX_Result^.kml_data.fAvail_attrib_strs) then begin
+              FKmlStyleList.AddStyle(
+                SafeSetStringP(pPX_Result^.kml_data.fAttribStrs[kml_a_s_id]),
+                TKmlStyleItem.Create(@pPX_Result^.kml_data)
+              );
+            end else
             if (pPX_Result^.prev_data <> nil) then begin
+              // пропихнуть наверх все параметры *Style
               VSAGPS_KML_ShiftParam(pPX_Result, kml_color);
               VSAGPS_KML_ShiftParam(pPX_Result, kml_width);
               VSAGPS_KML_ShiftParam(pPX_Result, kml_bgColor);
@@ -678,6 +725,25 @@ begin
               VSAGPS_KML_ShiftParam(pPX_Result, kml_textColor);
               VSAGPS_KML_ShiftParam(pPX_Result, kml_tileSize);
               VSAGPS_KML_ShiftParam(pPX_Result, kml_scale_);
+            end;
+          end;
+        end;
+      end;
+      kml_Pair: begin
+        case pPX_State^.tag_disposition of
+          xtd_Close: begin
+            if (pPX_Result^.prev_data <> nil) and
+               (pPX_Result^.prev_data.kml_data.current_tag = kml_StyleMap)
+            then begin
+              with pPX_Result^.kml_data do begin
+                if (kml_key in fAvail_strs) and (kml_styleUrl in fAvail_strs) then begin
+                  FKmlStyleMap.AddPair(
+                    SafeSetStringP(pPX_Result^.prev_data.kml_data.fAttribStrs[kml_a_s_id]),
+                    SafeSetStringP(fParamsStrs[kml_key]),
+                    SafeSetStringP(fParamsStrs[kml_styleUrl])
+                  );
+                end;
+              end;
             end;
           end;
         end;
@@ -817,26 +883,6 @@ begin
     Result := LoadFromStream(VContext, VMemStream);
   finally
     VMemStream.Free;
-  end;
-end;
-
-{ TPointWhen }
-
-procedure TPointWhen.PushBack(const AValue: TDateTime);
-var
-  I: Integer;
-begin
-  I := Length(FWhen);
-  SetLength(FWhen, I+1);
-  FWhen[I] := AValue;
-end;
-
-function TPointWhen.PopFront(out AValue: TDateTime): Boolean;
-begin
-  Result := FFront < Length(FWhen);
-  if Result then begin
-    AValue := FWhen[FFront];
-    Inc(FFront);
   end;
 end;
 

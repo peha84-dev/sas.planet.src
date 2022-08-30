@@ -198,6 +198,8 @@ begin
 end;
 
 procedure TTiledMapLayer.OnTimer;
+const
+  CFakeHashValue: THashValue = MaxInt;
 var
   VLocalConverter: ILocalCoordConverter;
   VTileMatrix: IBitmapTileMatrix;
@@ -230,11 +232,10 @@ begin
               if Assigned(VBitmap) then begin
                 VReadyId := VBitmap.Hash;
               end else begin
-                VReadyId := 0;
+                VReadyId := CFakeHashValue;
               end;
               if VReadyId <> VShownId then begin
-                VMapRect :=
-                  VLocalConverter.Projection.TilePos2PixelRect(VTile);
+                VMapRect := VLocalConverter.Projection.TilePos2PixelRect(VTile);
                 VDstRect := VLocalConverter.MapRect2LocalRect(VMapRect, rrClosest);
                 FShownIdMatrix.Tiles[VTile] := VReadyId;
                 FLayer.Changed(VDstRect);
@@ -270,7 +271,6 @@ var
   VDstSize: TPoint;
   VCounterContext: TInternalPerformanceCounterContext;
   VMapPixelRect: TDoubleRect;
-  VClipedDstRect: TRect;
   VRelativeRect: TDoubleRect;
 begin
   inherited;
@@ -311,9 +311,6 @@ begin
                 rrClosest
               );
           end;
-
-          Types.IntersectRect(VClipedDstRect, VDstRect, ABuffer.ClipRect);
-
           if not ABuffer.MeasuringMode then begin
             VDstSize := Types.Point(VDstRect.Right - VDstRect.Left, VDstRect.Bottom - VDstRect.Top);
             if (VDstSize.X = VBitmap.Size.X) and (VDstSize.Y = VBitmap.Size.Y) then begin

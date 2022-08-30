@@ -332,16 +332,12 @@ uses
   u_ExportProviderMBTiles,
   u_ExportProviderRMapsSQLite,
   u_ExportProviderOruxMapsSQLite,
-  //u_ExportProviderYaMobileV3,
-  //u_ExportProviderYaMobileV4,
   u_ExportProviderKml,
-  //u_ExportProviderIPhone,
   u_ExportProviderAUX,
   u_ExportProviderZip,
   u_ExportProviderTar,
   u_ExportProviderJNX,
   u_ExportProviderIMG,
-  //u_ExportProviderOgf2,
   u_ExportProviderCE,
   u_BitmapMapCombinerBMP,
   u_BitmapMapCombinerJPG,
@@ -1063,35 +1059,6 @@ var
 begin
   VList := TInterfaceListSimple.Create;
 
-// Exports to iPhone, Yandex.Mobile and Ogf2 are dead:
-// http://www.sasgis.org/mantis/view.php?id=3803
-
-//  VExportProvider :=
-//    TExportProviderIPhone.Create(
-//      AProgressFactory,
-//      ALanguageManager,
-//      AMapSelectFrameBuilder,
-//      AProjectionSetFactory,
-//      FTileIteratorFactory,
-//      ABitmap32StaticFactory,
-//      ABitmapTileSaveLoadFactory,
-//      True
-//    );
-//  VList.Add(VExportProvider);
-//
-//  VExportProvider :=
-//    TExportProviderIPhone.Create(
-//      AProgressFactory,
-//      ALanguageManager,
-//      AMapSelectFrameBuilder,
-//      AProjectionSetFactory,
-//      FTileIteratorFactory,
-//      ABitmap32StaticFactory,
-//      ABitmapTileSaveLoadFactory,
-//      False
-//    );
-//  VList.Add(VExportProvider);
-
   VExportProvider :=
     TExportProviderKml.Create(
       AProgressFactory,
@@ -1100,30 +1067,6 @@ begin
       FTileIteratorFactory
     );
   VList.Add(VExportProvider);
-
-//  VExportProvider :=
-//    TExportProviderYaMobileV3.Create(
-//      AProgressFactory,
-//      ALanguageManager,
-//      AMapSelectFrameBuilder,
-//      FTileIteratorFactory,
-//      ABitmap32StaticFactory,
-//      ABitmapTileSaveLoadFactory,
-//      AProjectionSetFactory
-//    );
-//  VList.Add(VExportProvider);
-//
-//  VExportProvider :=
-//    TExportProviderYaMobileV4.Create(
-//      AProgressFactory,
-//      ALanguageManager,
-//      AMapSelectFrameBuilder,
-//      FTileIteratorFactory,
-//      ABitmap32StaticFactory,
-//      ABitmapTileSaveLoadFactory,
-//      AProjectionSetFactory
-//    );
-//  VList.Add(VExportProvider);
 
   VExportProvider :=
     TExportProviderAUX.Create(
@@ -1179,18 +1122,6 @@ begin
       ABitmapPostProcessing
     );
   VList.Add(VExportProvider);
-
-//  VExportProvider :=
-//    TExportProviderOgf2.Create(
-//      AProgressFactory,
-//      ALanguageManager,
-//      AMapSelectFrameBuilder,
-//      AVectorGeometryProjectedFactory,
-//      ABitmap32StaticFactory,
-//      ABitmapTileSaveLoadFactory,
-//      AProjectionSetFactory
-//    );
-//  VList.Add(VExportProvider);
 
   VExportProvider :=
     TExportProviderCE.Create(

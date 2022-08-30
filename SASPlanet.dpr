@@ -146,6 +146,7 @@ uses
   i_CmdLineArgProcessor in 'Src\CmdLineArgProcessor\i_CmdLineArgProcessor.pas',
   u_CmdLineArgProcessor in 'Src\CmdLineArgProcessor\u_CmdLineArgProcessor.pas',
   u_CmdLineArgProcessorAPI in 'Src\CmdLineArgProcessor\u_CmdLineArgProcessorAPI.pas',
+  u_CmdLineArgProcessorAsync in 'Src\CmdLineArgProcessor\u_CmdLineArgProcessorAsync.pas',
   u_CmdLineArgProcessorHelpers in 'Src\CmdLineArgProcessor\u_CmdLineArgProcessorHelpers.pas',
   i_ConfigDataElement in 'Src\ConfigData\i_ConfigDataElement.pas',
   i_ConfigDataProvider in 'Src\ConfigData\i_ConfigDataProvider.pas',
@@ -643,23 +644,6 @@ uses
   u_PointsSetLayerConfig in 'Src\MapLayers\u_PointsSetLayerConfig.pas',
   u_UseTilePrevZoomConfig in 'Src\MapLayers\u_UseTilePrevZoomConfig.pas',
   u_VectorItemDrawConfig in 'Src\MapLayers\u_VectorItemDrawConfig.pas',
-  frm_DGAvailablePic in 'Src\MapSvcScan\frm_DGAvailablePic.pas' {frmDGAvailablePic},
-  i_MapSvcScanConfig in 'Src\MapSvcScan\i_MapSvcScanConfig.pas',
-  i_MapSvcScanStorage in 'Src\MapSvcScan\i_MapSvcScanStorage.pas',
-  u_AvailPicsAbstract in 'Src\MapSvcScan\u_AvailPicsAbstract.pas',
-  u_AvailPicsBing in 'Src\MapSvcScan\u_AvailPicsBing.pas',
-  u_AvailPicsDD in 'Src\MapSvcScan\u_AvailPicsDD.pas',
-  u_AvailPicsDG in 'Src\MapSvcScan\u_AvailPicsDG.pas',
-  u_AvailPicsDG2 in 'Src\MapSvcScan\u_AvailPicsDG2.pas',
-  u_AvailPicsESRI in 'Src\MapSvcScan\u_AvailPicsESRI.pas',
-  u_AvailPicsGeoFuse in 'Src\MapSvcScan\u_AvailPicsGeoFuse.pas',
-  u_AvailPicsKosmosnimki in 'Src\MapSvcScan\u_AvailPicsKosmosnimki.pas',
-  u_AvailPicsNMC in 'Src\MapSvcScan\u_AvailPicsNMC.pas',
-  u_AvailPicsRosCosmos in 'Src\MapSvcScan\u_AvailPicsRosCosmos.pas',
-  u_AvailPicsTerra in 'Src\MapSvcScan\u_AvailPicsTerra.pas',
-  u_MapSvcScanConfig in 'Src\MapSvcScan\u_MapSvcScanConfig.pas',
-  u_MapSvcScanStorage in 'Src\MapSvcScan\u_MapSvcScanStorage.pas',
-  u_XmlLoaderByVSAGPS in 'Src\MapSvcScan\u_XmlLoaderByVSAGPS.pas',
   frm_MapTypeEdit in 'Src\MapType\frm_MapTypeEdit.pas' {frmMapTypeEdit},
   i_ActiveMapsConfig in 'Src\MapType\i_ActiveMapsConfig.pas',
   i_LayerDrawConfig in 'Src\MapType\i_LayerDrawConfig.pas',
@@ -1058,9 +1042,6 @@ uses
   u_ExportTaskToIMG in 'Src\RegionProcess\Export\IMG\u_ExportTaskToIMG.pas',
   u_ExportToIMGConfig in 'Src\RegionProcess\Export\IMG\u_ExportToIMGConfig.pas',
   u_ExportToIMGTask in 'Src\RegionProcess\Export\IMG\u_ExportToIMGTask.pas',
-  fr_ExportIPhone in 'Src\RegionProcess\Export\IPhone\fr_ExportIPhone.pas' {frExportIPhone: TFrame},
-  u_ExportProviderIPhone in 'Src\RegionProcess\Export\IPhone\u_ExportProviderIPhone.pas',
-  u_ExportTaskToIPhone in 'Src\RegionProcess\Export\IPhone\u_ExportTaskToIPhone.pas',
   fr_ExportToJNX in 'Src\RegionProcess\Export\JNX\fr_ExportToJNX.pas' {frExportToJNX: TFrame},
   u_ExportProviderJNX in 'Src\RegionProcess\Export\JNX\u_ExportProviderJNX.pas',
   u_ExportTaskToJnx in 'Src\RegionProcess\Export\JNX\u_ExportTaskToJnx.pas',
@@ -1072,9 +1053,6 @@ uses
   u_ExportProviderMBTiles in 'Src\RegionProcess\Export\MBTiles\u_ExportProviderMBTiles.pas',
   u_ExportTaskToMBTiles in 'Src\RegionProcess\Export\MBTiles\u_ExportTaskToMBTiles.pas',
   u_StorageExportToMBTiles in 'Src\RegionProcess\Export\MBTiles\u_StorageExportToMBTiles.pas',
-  fr_ExportToOgf2 in 'Src\RegionProcess\Export\OGF2\fr_ExportToOgf2.pas' {frExportToOgf2: TFrame},
-  u_ExportProviderOgf2 in 'Src\RegionProcess\Export\OGF2\u_ExportProviderOgf2.pas',
-  u_ExportTaskToOgf2 in 'Src\RegionProcess\Export\OGF2\u_ExportTaskToOgf2.pas',
   fr_ExportOruxMapsSQLite in 'Src\RegionProcess\Export\OruxMaps\fr_ExportOruxMapsSQLite.pas' {frExportOruxMapsSQLite: TFrame},
   u_ExportProviderOruxMapsSQLite in 'Src\RegionProcess\Export\OruxMaps\u_ExportProviderOruxMapsSQLite.pas',
   u_ExportTaskToOruxMapsSQLite in 'Src\RegionProcess\Export\OruxMaps\u_ExportTaskToOruxMapsSQLite.pas',
@@ -1089,12 +1067,6 @@ uses
   fr_ExportToCE in 'Src\RegionProcess\Export\SAS4Android\fr_ExportToCE.pas' {frExportToCE: TFrame},
   u_ExportProviderCE in 'Src\RegionProcess\Export\SAS4Android\u_ExportProviderCE.pas',
   u_ExportTaskToCE in 'Src\RegionProcess\Export\SAS4Android\u_ExportTaskToCE.pas',
-  fr_ExportYaMobileV3 in 'Src\RegionProcess\Export\YandexMobile\fr_ExportYaMobileV3.pas' {frExportYaMobileV3: TFrame},
-  fr_ExportYaMobileV4 in 'Src\RegionProcess\Export\YandexMobile\fr_ExportYaMobileV4.pas' {frExportYaMobileV4: TFrame},
-  u_ExportProviderYaMobileV3 in 'Src\RegionProcess\Export\YandexMobile\u_ExportProviderYaMobileV3.pas',
-  u_ExportProviderYaMobileV4 in 'Src\RegionProcess\Export\YandexMobile\u_ExportProviderYaMobileV4.pas',
-  u_ExportTaskToYaMobileV3 in 'Src\RegionProcess\Export\YandexMobile\u_ExportTaskToYaMobileV3.pas',
-  u_ExportTaskToYaMobileV4 in 'Src\RegionProcess\Export\YandexMobile\u_ExportTaskToYaMobileV4.pas',
   u_ExportTaskAbstract in 'Src\RegionProcess\Export\u_ExportTaskAbstract.pas',
   fr_TilesGenPrev in 'Src\RegionProcess\GenPrev\fr_TilesGenPrev.pas' {frTilesGenPrev: TFrame},
   u_ProviderTilesGenPrev in 'Src\RegionProcess\GenPrev\u_ProviderTilesGenPrev.pas',
@@ -1186,6 +1158,7 @@ uses
   u_LanguageManager in 'Src\System\u_LanguageManager.pas',
   u_LanguagesEx in 'Src\System\u_LanguagesEx.pas',
   u_SystemTimeProvider in 'Src\System\u_SystemTimeProvider.pas',
+  u_WindowsMessageCopyDataSender in 'Src\System\u_WindowsMessageCopyDataSender.pas',
   u_ExternalTerrainAPI in 'Src\Terrain\External\u_ExternalTerrainAPI.pas',
   u_ExternalTerrainsProvider in 'Src\Terrain\External\u_ExternalTerrainsProvider.pas',
   i_GoogleEarthTerrainTileStorage in 'Src\Terrain\GoogleEarth\i_GoogleEarthTerrainTileStorage.pas',
@@ -1443,6 +1416,7 @@ uses
   u_VectorItemTreeImporterList in 'Src\Vector\u_VectorItemTreeImporterList.pas',
   u_VectorItemTreeImporterListSimple in 'Src\Vector\u_VectorItemTreeImporterListSimple.pas',
   u_VectorItemTreeImporterXML in 'Src\Vector\u_VectorItemTreeImporterXML.pas',
+  u_VectorItemTreeImporterXmlHelpers in 'Src\Vector\u_VectorItemTreeImporterXmlHelpers.pas',
   u_VectorItemTreeMarksDb in 'Src\Vector\u_VectorItemTreeMarksDb.pas',
   i_GlobalAppConfig in 'Src\i_GlobalAppConfig.pas',
   i_GlobalConfig in 'Src\i_GlobalConfig.pas',
@@ -1573,14 +1547,26 @@ const
 
 var
   VApp: TApplication;
+  VAppEnum: IAppEnum;
 begin
+  VAppEnum := TAppEnum.Create;
+
+  if (ParamCount > 0) and (VAppEnum.Count > 1) then begin
+    if TWindowsMessageCopyDataSender.SendCmdLineArgs then begin
+      Exit;
+    end;
+  end;
+
   SetCurrentThreadName('ApplicationMainThread');
+
   if TBaseInterfacedObject = TBaseInterfacedObjectDebug then begin
     TBaseInterfacedObjectDebug.InitCounters;
   end;
-  VApp := Application;
-  GState := TGlobalState.Create;
+
+  GState := TGlobalState.Create(VAppEnum);
   try
+    VApp := Application;
+
     VApp.Initialize;
     VApp.MainFormOnTaskBar := True;
     VApp.Title := GState.ApplicationCaption;
@@ -1593,6 +1579,7 @@ begin
       GState.MainConfigProvider,
       GState.Config.StartUpLogoConfig
     );
+
     try
       GState.LoadConfig;
     except
@@ -1601,8 +1588,10 @@ begin
         Exit;
       end;
     end;
+
     VApp.HelpFile := '';
     VApp.CreateForm(TfrmMain, frmMain);
+
     GState.StartExceptionTracking;
     try
       VApp.Run;
